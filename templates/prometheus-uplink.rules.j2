@@ -1,0 +1,52 @@
+# {{ ansible_managed }}
+{# Prometheus alert template text, written out literally. #}
+{% set uplink_label = '{{ $labels.uplink }}' %}
+groups:
+- name: uplinks
+  rules:
+
+  # An uplink is down when no ping target is reachable through it.
+  - alert: uplink_down
+    expr: max by (uplink) (probe_success{job="ping"}) == 0
+    for: 2m
+    labels:
+      severity: page
+    annotations:
+      summary: "Uplink {{ uplink_label }} down"
+      description: "No ping target has been reachable through uplink {{ uplink_label }} for more than 2 minutes."
+
+  # The scheduler pushes results once per interval; older results mean it or an exporter is stuck.
+  - alert: uplink_speedtest_stale
+    expr: time() - push_time_seconds{job="speedtest"} > {{ uplink_speedtest_stale_after_seconds }}
+    labels:
+      severity: page
+    annotations:
+      summary: "No recent speed test for uplink {{ uplink_label }}"
+      description: "The last speed test result for uplink {{ uplink_label }} is more than {{ uplink_speedtest_stale_after_seconds }} seconds old."
+
+  - alert: uplink_speedtest_failed
+    expr: speedtest_up{job="speedtest"} == 0
+    labels:
+      severity: page
+    annotations:
+      summary: "Speed test failed on uplink {{ uplink_label }}"
+      description: "The last scheduled speed test through uplink {{ uplink_label }} did not complete."
+
+  # The ISP lookup through the uplink no longer matches expected_isp_pattern, e.g. after a failover.
+  - alert: uplink_unexpected_isp
+    expr: probe_success{job="uplink_egress"} == 0
+    for: 10m
+    labels:
+      severity: page
+    annotations:
+      summary: "Uplink {{ uplink_label }} leaves through an unexpected ISP"
+      description: "Traffic through uplink {{ uplink_label }} has not matched its expected ISP for 10 minutes (failover, or the lookup service is unreachable)."
+{% for transfer_direction in ['download', 'upload'] %}
+{% for uplink in monitoring_uplinks | selectattr('contract_' ~ transfer_direction ~ '_mbps', 'defined') %}
+
+  - record: uplink_contract_{{ transfer_direction }}_bits_per_second
+    expr: vector({{ (uplink['contract_' ~ transfer_direction ~ '_mbps'] * 1000000) | int }})
+    labels:
+      uplink: '{{ uplink.name }}'
+{% endfor %}
+{% endfor %}

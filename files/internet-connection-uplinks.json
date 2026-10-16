@@ -1,0 +1,726 @@
+{
+  "uid": "internet-uplinks",
+  "title": "Internet connection by uplink",
+  "tags": [
+    "internet",
+    "uplink",
+    "speedtest",
+    "ping"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "editable": true,
+  "refresh": "5m",
+  "time": {
+    "from": "now-2d",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "uplink",
+        "label": "Uplink",
+        "type": "query",
+        "datasource": "prometheus",
+        "query": {
+          "query": "label_values(probe_success, uplink)",
+          "refId": "uplink_values"
+        },
+        "definition": "label_values(probe_success, uplink)",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "sort": 1
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "type": "gauge",
+      "title": "Download (average)",
+      "datasource": "prometheus",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "speedtest_download_bits_per_second{job=\"speedtest\", uplink=~\"$uplink\"} and on (uplink) (changes(push_time_seconds{job=\"speedtest\"}[$__rate_interval]) > 0) and on (uplink) (speedtest_up{job=\"speedtest\"} == 1)",
+          "legendFormat": "{{uplink}}",
+          "refId": "A",
+          "datasource": "prometheus",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdMarkers": false,
+        "showThresholdLabels": false
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bps",
+          "decimals": 1,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "interval": "1m",
+      "id": 1
+    },
+    {
+      "type": "gauge",
+      "title": "Upload (average)",
+      "datasource": "prometheus",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "speedtest_upload_bits_per_second{job=\"speedtest\", uplink=~\"$uplink\"} and on (uplink) (changes(push_time_seconds{job=\"speedtest\"}[$__rate_interval]) > 0) and on (uplink) (speedtest_up{job=\"speedtest\"} == 1)",
+          "legendFormat": "{{uplink}}",
+          "refId": "A",
+          "datasource": "prometheus",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdMarkers": false,
+        "showThresholdLabels": false
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bps",
+          "decimals": 1,
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "interval": "1m",
+      "id": 2
+    },
+    {
+      "type": "bargauge",
+      "title": "% of contract (average)",
+      "datasource": "prometheus",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "100 * (speedtest_download_bits_per_second{job=\"speedtest\", uplink=~\"$uplink\"} and on (uplink) (changes(push_time_seconds{job=\"speedtest\"}[$__rate_interval]) > 0) and on (uplink) (speedtest_up{job=\"speedtest\"} == 1)) / on (uplink) uplink_contract_download_bits_per_second",
+          "legendFormat": "{{uplink}} down",
+          "refId": "A",
+          "datasource": "prometheus",
+          "instant": false,
+          "range": true
+        },
+        {
+          "expr": "100 * (speedtest_upload_bits_per_second{job=\"speedtest\", uplink=~\"$uplink\"} and on (uplink) (changes(push_time_seconds{job=\"speedtest\"}[$__rate_interval]) > 0) and on (uplink) (speedtest_up{job=\"speedtest\"} == 1)) / on (uplink) uplink_contract_upload_bits_per_second",
+          "legendFormat": "{{uplink}} up",
+          "refId": "B",
+          "datasource": "prometheus",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "options": {
+        "displayMode": "lcd",
+        "orientation": "horizontal",
+        "showUnfilled": true,
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 110,
+          "decimals": 0,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 50
+              },
+              {
+                "color": "green",
+                "value": 90
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "interval": "1m",
+      "id": 3
+    },
+    {
+      "type": "stat",
+      "title": "Availability",
+      "datasource": "prometheus",
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "100 * avg_over_time((max by (uplink) (probe_success{job=\"ping\", uplink=~\"$uplink\"}))[$__range:1m])",
+          "legendFormat": "{{uplink}}",
+          "refId": "A",
+          "datasource": "prometheus",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 99
+              },
+              {
+                "color": "green",
+                "value": 99.9
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "id": 4
+    },
+    {
+      "type": "timeseries",
+      "title": "Speedtest Graph",
+      "datasource": "prometheus",
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "speedtest_download_bits_per_second{job=\"speedtest\", uplink=~\"$uplink\"} and on (uplink) (changes(push_time_seconds{job=\"speedtest\"}[$__rate_interval]) > 0) and on (uplink) (speedtest_up{job=\"speedtest\"} == 1)",
+          "legendFormat": "{{uplink}} down",
+          "refId": "A",
+          "datasource": "prometheus",
+          "instant": false,
+          "range": true
+        },
+        {
+          "expr": "speedtest_upload_bits_per_second{job=\"speedtest\", uplink=~\"$uplink\"} and on (uplink) (changes(push_time_seconds{job=\"speedtest\"}[$__rate_interval]) > 0) and on (uplink) (speedtest_up{job=\"speedtest\"} == 1)",
+          "legendFormat": "{{uplink}} up",
+          "refId": "B",
+          "datasource": "prometheus",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bps",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 20,
+            "gradientMode": "opacity",
+            "spanNulls": true,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "interval": "1m",
+      "id": 5
+    },
+    {
+      "type": "state-timeline",
+      "title": "Uptime and ISP",
+      "datasource": "prometheus",
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "max by (uplink) (probe_success{job=\"ping\", uplink=~\"$uplink\"})",
+          "legendFormat": "{{uplink}}",
+          "refId": "A",
+          "datasource": "prometheus",
+          "instant": false,
+          "range": true
+        },
+        {
+          "expr": "probe_success{job=\"uplink_egress\", uplink=~\"$uplink\"}",
+          "legendFormat": "{{uplink}} ISP",
+          "refId": "B",
+          "datasource": "prometheus",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "options": {
+        "showValue": "never",
+        "mergeValues": true,
+        "rowHeight": 0.85,
+        "legend": {
+          "showLegend": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 1,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "A"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "down"
+                      },
+                      "1": {
+                        "text": "up"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "other ISP"
+                      },
+                      "1": {
+                        "text": "expected ISP"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "id": 6
+    },
+    {
+      "type": "timeseries",
+      "title": "Latency (ICMP round trip)",
+      "datasource": "prometheus",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 17
+      },
+      "targets": [
+        {
+          "expr": "avg by (uplink) (probe_icmp_duration_seconds{job=\"icmp\", phase=\"rtt\", uplink=~\"$uplink\"} and on (uplink, instance) (probe_success{job=\"icmp\"} == 1))",
+          "legendFormat": "{{uplink}}",
+          "refId": "A",
+          "datasource": "prometheus",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 20,
+            "gradientMode": "opacity",
+            "spanNulls": true,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "id": 7
+    },
+    {
+      "type": "timeseries",
+      "title": "Packet loss (ICMP)",
+      "datasource": "prometheus",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 17
+      },
+      "targets": [
+        {
+          "expr": "100 * (1 - avg by (uplink) (avg_over_time(probe_success{job=\"icmp\", uplink=~\"$uplink\"}[$__rate_interval])))",
+          "legendFormat": "{{uplink}}",
+          "refId": "A",
+          "datasource": "prometheus",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 20,
+            "gradientMode": "opacity",
+            "spanNulls": true,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "id": 8
+    },
+    {
+      "type": "timeseries",
+      "title": "Speedtest Ping and Jitter",
+      "datasource": "prometheus",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 17
+      },
+      "targets": [
+        {
+          "expr": "speedtest_ping_latency_milliseconds{job=\"speedtest\", uplink=~\"$uplink\"} and on (uplink) (changes(push_time_seconds{job=\"speedtest\"}[$__rate_interval]) > 0) and on (uplink) (speedtest_up{job=\"speedtest\"} == 1)",
+          "legendFormat": "{{uplink}} ping",
+          "refId": "A",
+          "datasource": "prometheus",
+          "instant": false,
+          "range": true
+        },
+        {
+          "expr": "speedtest_jitter_latency_milliseconds{job=\"speedtest\", uplink=~\"$uplink\"} and on (uplink) (changes(push_time_seconds{job=\"speedtest\"}[$__rate_interval]) > 0) and on (uplink) (speedtest_up{job=\"speedtest\"} == 1)",
+          "legendFormat": "{{uplink}} jitter",
+          "refId": "B",
+          "datasource": "prometheus",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 20,
+            "gradientMode": "opacity",
+            "spanNulls": true,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "interval": "1m",
+      "id": 9
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP Request Duration (average over ping targets)",
+      "datasource": "prometheus",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 25
+      },
+      "targets": [
+        {
+          "expr": "avg by (uplink) (sum by (uplink, instance) (probe_http_duration_seconds{job=\"ping\", uplink=~\"$uplink\"}))",
+          "legendFormat": "{{uplink}}",
+          "refId": "A",
+          "datasource": "prometheus",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 20,
+            "gradientMode": "opacity",
+            "spanNulls": true,
+            "showPoints": "auto",
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "id": 10
+    }
+  ]
+}

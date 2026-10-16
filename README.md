@@ -89,6 +89,47 @@ prometheus_node_exporter_targets:
   - 'another-server.local:9100'
 ```
 
+### Monitoring multiple uplinks (dual WAN)
+
+If the Pi is connected to more than one uplink (for example one network port per WAN, or one port per VLAN where each VLAN is routed through a different WAN), set `monitoring_uplinks` in `config.yml` to measure each uplink separately:
+
+```yaml
+monitoring_uplinks:
+  - name: cable
+    parent_interface: eth0
+    subnet: 192.0.2.0/24
+    gateway: 192.0.2.1
+    probe_address: 192.0.2.250
+    contract_download_mbps: 600          # optional
+    contract_upload_mbps: 40             # optional
+    expected_isp_pattern: 'Example Cable'  # optional
+  - name: dsl
+    parent_interface: eth1
+    subnet: 198.51.100.0/24
+    gateway: 198.51.100.1
+    probe_address: 198.51.100.250
+```
+
+Each uplink gets its own ping (blackbox) and speedtest exporter. The two share a container network namespace attached to a macvlan network on `parent_interface`, with `probe_address` as a static address and the uplink's `gateway` as the default route, so their traffic always leaves through that uplink. While `monitoring_uplinks` is set, the single default-route `speedtest` and `ping` containers are not started; with it empty, nothing changes.
+
+What you get per uplink, all labeled with `uplink` and shown on the "Internet connection by uplink" dashboard:
+
+  - **Scheduled speed tests.** A small scheduler runs the uplinks' speed tests one after another (never two at once, so they do not compete for the Pi's CPU), once per `monitoring_speedtest_interval`, `monitoring_uplink_speedtest_offset` after each interval boundary (boundaries are aligned to UTC, so `60m` and `5m` mean every hour at :05). Results are kept in a Prometheus Pushgateway, which Prometheus scrapes.
+  - **HTTP checks** against `monitoring_ping_hosts`, as in the single-uplink setup.
+  - **ICMP round-trip time and packet loss** to `monitoring_uplink_icmp_hosts`, which measure the line itself rather than how fast a web server answers.
+  - **% of contract**, when `contract_download_mbps` / `contract_upload_mbps` are set: the average test result as a percentage of the speed you pay for.
+  - **ISP check**, when `expected_isp_pattern` is set: every 5 minutes the uplink asks `monitoring_uplink_egress_lookup_url` which ISP it is using; the `uplink_unexpected_isp` alert fires when it no longer matches, for example after your router failed the uplink over to another WAN.
+  - **Alerts:** `uplink_down` (no ping target reachable), `uplink_speedtest_failed`, `uplink_speedtest_stale` (no result for two intervals) and `uplink_unexpected_isp`.
+
+Things to know:
+
+  - Reserve each `probe_address` on your router, outside the DHCP pool. Docker assigns it statically.
+  - Requires Docker Engine 28.0 or newer and Docker Compose 2.33.1 or newer (for `gw_priority`). The playbook checks this and stops with a message if Docker is older; it does not upgrade an existing Docker installation.
+  - The Pi itself cannot reach the probe addresses (a macvlan limitation). Prometheus reaches the probes over the internal `back-tier` network instead, so monitoring is not affected.
+  - If your router fails an uplink's network over to another WAN, that uplink's probes keep reporting, but with the other WAN's numbers. Set `expected_isp_pattern` to be alerted, or disable failover for that network on the router.
+  - `dns_servers` (a list) is optional per uplink. Set it when an uplink's network cannot reach the Pi's own DNS servers.
+  - "% of contract" is a quick indicator, not a legal measurement. Where regulators define how to prove a slow connection (for example the Breitbandmessung app in Germany), use their tool for any claim.
+
 ## Updating
 
 ### pi-hole
