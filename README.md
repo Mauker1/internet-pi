@@ -113,7 +113,7 @@ monitoring_uplinks:
 
 Each uplink gets its own ping (blackbox) and speedtest exporter. The two share a container network namespace attached to a macvlan network on `parent_interface`, with `probe_address` as a static address and the uplink's `gateway` as the default route, so their traffic always leaves through that uplink. While `monitoring_uplinks` is set, the single default-route `speedtest` and `ping` containers are not started; with it empty, nothing changes.
 
-What you get per uplink, all labeled with `uplink` (and `display_name`, the readable label set per uplink) and shown on the "Internet connection by uplink" dashboard, which replaces the single-uplink "Internet connection" dashboard while `monitoring_uplinks` is set:
+What you get per uplink, all labeled with `uplink` (the readable `display_name` comes from the `uplink_info` series) and shown on the "Internet connection by uplink" dashboard, which replaces the single-uplink "Internet connection" dashboard while `monitoring_uplinks` is set:
 
   - **Scheduled speed tests.** A small scheduler runs the uplinks' speed tests one after another (never two at once, so they do not compete for the Pi's CPU), once per `monitoring_speedtest_interval`, `monitoring_uplink_speedtest_offset` after each interval boundary (boundaries are aligned to UTC, so `60m` and `5m` mean every hour at :05). Results are kept in a Prometheus Pushgateway, which Prometheus scrapes.
   - **HTTP checks** against `monitoring_ping_hosts`, as in the single-uplink setup.

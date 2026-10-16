@@ -83,15 +83,6 @@ scrape_configs:
         target_label: __address__
         replacement: uplink-${1}-probe:9115  # The uplink's blackbox exporter.
 {% endmacro %}
-{% macro uplink_display_name_relabel() %}
-    metric_relabel_configs:  # adds display_name, the readable label shown on the dashboard
-{% for uplink in monitoring_uplinks %}
-      - source_labels: [uplink]
-        regex: '{{ uplink.name }}'
-        target_label: display_name
-        replacement: {{ uplink.display_name | default(uplink.name) | replace('$', '$$') | to_json }}
-{% endfor %}
-{% endmacro %}
 {% set uplinks_with_expected_isp = monitoring_uplinks | selectattr('expected_isp_pattern', 'defined') | list %}
 
   # Speed tests run on a schedule (uplink-speedtest-scheduler); their results wait in the Pushgateway.
@@ -99,7 +90,7 @@ scrape_configs:
     honor_labels: true  # keep the job and uplink labels set when the results were pushed
     static_configs:
       - targets: ['pushgateway:9091']
-{{ uplink_display_name_relabel() }}
+
   - job_name: 'ping'
     metrics_path: /probe
     scrape_interval: {{ monitoring_ping_interval }}
@@ -119,7 +110,7 @@ scrape_configs:
         replacement: $2
       - source_labels: [instance]
         target_label: __param_target
-{{ uplink_probe_address_relabel() }}{{ uplink_display_name_relabel() }}
+{{ uplink_probe_address_relabel() }}
   - job_name: 'icmp'
     metrics_path: /probe
     scrape_interval: {{ monitoring_ping_interval }}
@@ -136,7 +127,7 @@ scrape_configs:
         target_label: __param_target
       - source_labels: [__address__]
         target_label: instance
-{{ uplink_probe_address_relabel() }}{{ uplink_display_name_relabel() }}
+{{ uplink_probe_address_relabel() }}
 {% if uplinks_with_expected_isp %}
   - job_name: 'uplink_egress'
     metrics_path: /probe
@@ -152,7 +143,7 @@ scrape_configs:
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
-{{ uplink_probe_address_relabel() }}{{ uplink_display_name_relabel() }}
+{{ uplink_probe_address_relabel() }}
 {% endif %}
 {% endif %}
 
