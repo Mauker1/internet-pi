@@ -82,6 +82,7 @@
       "fieldConfig": {
         "defaults": {
           "unit": "bps",
+          "min": 0,
           "decimals": 1,
           "color": {
             "mode": "palette-classic"
@@ -136,6 +137,7 @@
       "fieldConfig": {
         "defaults": {
           "unit": "bps",
+          "min": 0,
           "decimals": 1,
           "color": {
             "mode": "palette-classic"
@@ -348,7 +350,8 @@
             "fillOpacity": 20,
             "gradientMode": "opacity",
             "spanNulls": true,
-            "showPoints": "auto",
+            "showPoints": "always",
+            "pointSize": 5,
             "thresholdsStyle": {
               "mode": "off"
             }
@@ -521,6 +524,7 @@
             "gradientMode": "opacity",
             "spanNulls": true,
             "showPoints": "auto",
+            "pointSize": 5,
             "thresholdsStyle": {
               "mode": "off"
             }
@@ -582,6 +586,7 @@
             "gradientMode": "opacity",
             "spanNulls": true,
             "showPoints": "auto",
+            "pointSize": 5,
             "thresholdsStyle": {
               "mode": "off"
             }
@@ -650,7 +655,8 @@
             "fillOpacity": 20,
             "gradientMode": "opacity",
             "spanNulls": true,
-            "showPoints": "auto",
+            "showPoints": "always",
+            "pointSize": 5,
             "thresholdsStyle": {
               "mode": "off"
             }
@@ -713,6 +719,7 @@
             "gradientMode": "opacity",
             "spanNulls": true,
             "showPoints": "auto",
+            "pointSize": 5,
             "thresholdsStyle": {
               "mode": "off"
             }
