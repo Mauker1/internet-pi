@@ -33,8 +33,9 @@ monitoring_ping_hosts:  # [URL];[HUMAN_READABLE_NAME]
 # `probe_address` must be a free address in `subnet`, reserved outside the
 # DHCP pool. Optional per uplink: `dns_servers` (list), `contract_download_mbps`
 # and `contract_upload_mbps` (the speeds you pay for, shown as "% of contract"),
-# and `expected_isp_pattern` (text in the ISP name, case-insensitive; an alert
-# fires when the uplink's traffic leaves through another ISP, e.g. failover).
+# `expected_isp_pattern` (text in the ISP name, case-insensitive; an alert
+# fires when the uplink's traffic leaves through another ISP, e.g. failover),
+# and `display_name` (readable label for the dashboard, defaults to `name`).
 # Requires Docker Engine 28.0 or newer and Docker Compose 2.33.1 or newer.
 monitoring_uplinks: []
 # monitoring_uplinks:
@@ -46,6 +47,7 @@ monitoring_uplinks: []
 #     contract_download_mbps: 600
 #     contract_upload_mbps: 40
 #     expected_isp_pattern: 'Example Cable'
+#     display_name: 'Example Cable (WAN1)'
 #   - name: dsl
 #     parent_interface: eth1
 #     subnet: 198.51.100.0/24

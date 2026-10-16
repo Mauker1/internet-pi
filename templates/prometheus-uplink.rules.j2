@@ -1,13 +1,13 @@
 # {{ ansible_managed }}
 {# Prometheus alert template text, written out literally. #}
-{% set uplink_label = '{{ $labels.uplink }}' %}
+{% set uplink_label = '{{ $labels.display_name }}' %}
 groups:
 - name: uplinks
   rules:
 
   # An uplink is down when no ping target is reachable through it.
   - alert: uplink_down
-    expr: max by (uplink) (probe_success{job="ping"}) == 0
+    expr: max by (uplink, display_name) (probe_success{job="ping"}) == 0
     for: 2m
     labels:
       severity: page

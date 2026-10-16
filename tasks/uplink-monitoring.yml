@@ -12,10 +12,13 @@
       - uplink.contract_download_mbps is not defined or uplink.contract_download_mbps is number
       - uplink.contract_upload_mbps is not defined or uplink.contract_upload_mbps is number
       - uplink.expected_isp_pattern is not defined or uplink.expected_isp_pattern is string
+      - uplink.display_name is not defined or uplink.display_name is string
     fail_msg: >-
       Uplink '{{ uplink.name | default('unnamed') }}' needs a name made of lowercase letters, digits
-      and hyphens, a parent_interface that exists on this host, and subnet, gateway and probe_address.
-      contract_download_mbps and contract_upload_mbps must be numbers, expected_isp_pattern text.
+      and hyphens (for example o2-cable; put a readable label such as 'O2 (Cable)' in display_name),
+      a parent_interface that exists on this host, and subnet, gateway and probe_address.
+      contract_download_mbps and contract_upload_mbps must be numbers; expected_isp_pattern and
+      display_name text.
     quiet: true
   loop: "{{ monitoring_uplinks }}"
   loop_control:

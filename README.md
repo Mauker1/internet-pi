@@ -103,6 +103,7 @@ monitoring_uplinks:
     contract_download_mbps: 600          # optional
     contract_upload_mbps: 40             # optional
     expected_isp_pattern: 'Example Cable'  # optional
+    display_name: 'Example Cable (WAN1)'   # optional
   - name: dsl
     parent_interface: eth1
     subnet: 198.51.100.0/24
@@ -112,7 +113,7 @@ monitoring_uplinks:
 
 Each uplink gets its own ping (blackbox) and speedtest exporter. The two share a container network namespace attached to a macvlan network on `parent_interface`, with `probe_address` as a static address and the uplink's `gateway` as the default route, so their traffic always leaves through that uplink. While `monitoring_uplinks` is set, the single default-route `speedtest` and `ping` containers are not started; with it empty, nothing changes.
 
-What you get per uplink, all labeled with `uplink` and shown on the "Internet connection by uplink" dashboard:
+What you get per uplink, all labeled with `uplink` (and `display_name`, the readable label set per uplink) and shown on the "Internet connection by uplink" dashboard, which replaces the single-uplink "Internet connection" dashboard while `monitoring_uplinks` is set:
 
   - **Scheduled speed tests.** A small scheduler runs the uplinks' speed tests one after another (never two at once, so they do not compete for the Pi's CPU), once per `monitoring_speedtest_interval`, `monitoring_uplink_speedtest_offset` after each interval boundary (boundaries are aligned to UTC, so `60m` and `5m` mean every hour at :05). Results are kept in a Prometheus Pushgateway, which Prometheus scrapes.
   - **HTTP checks** against `monitoring_ping_hosts`, as in the single-uplink setup.
@@ -125,7 +126,7 @@ Things to know:
 
   - Reserve each `probe_address` on your router, outside the DHCP pool. Docker assigns it statically.
   - Requires Docker Engine 28.0 or newer and Docker Compose 2.33.1 or newer (for `gw_priority`). The playbook checks this and stops with a message if Docker is older; it does not upgrade an existing Docker installation.
-  - The Pi itself cannot reach the probe addresses (a macvlan limitation). Prometheus reaches the probes over the internal `back-tier` network instead, so monitoring is not affected.
+  - The Pi itself cannot reach the probe addresses (a macvlan limitation). Prometheus reaches the probes over the internal `back-tier` network instead, so monitoring is not affected. The per-uplink ping exporter listens only on that internal network, so other devices on the uplink's LAN cannot use its `/probe` endpoint.
   - If your router fails an uplink's network over to another WAN, that uplink's probes keep reporting, but with the other WAN's numbers. Set `expected_isp_pattern` to be alerted, or disable failover for that network on the router.
   - `dns_servers` (a list) is optional per uplink. Set it when an uplink's network cannot reach the Pi's own DNS servers.
   - "% of contract" is a quick indicator, not a legal measurement. Where regulators define how to prove a slow connection (for example the Breitbandmessung app in Germany), use their tool for any claim.
