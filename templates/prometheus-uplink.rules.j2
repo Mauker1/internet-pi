@@ -1,8 +1,10 @@
 # {{ ansible_managed }}
 {# Prometheus alert template text, written out literally. #}
 {% set uplink_label = '{{ $labels.display_name }}' %}
-{# Adds the uplink's display name (uplink_info, recorded below) to a series with one sample per uplink. #}
-{% set with_display_name = '* on (uplink) group_left (display_name) uplink_info' %}
+{# Adds the uplink's display name (uplink_info, recorded below) to a series with one sample per uplink.
+   Only the uplink_info series with the newest sample is used: after a display_name change and a Prometheus
+   restart, the old series stays visible for 5 minutes next to the new one, which would break the join. #}
+{% set with_display_name = '* on (uplink) group_left (display_name) (0 * topk by (uplink) (1, timestamp(uplink_info)) + 1)' %}
 groups:
 - name: uplinks
   rules:
