@@ -54,6 +54,8 @@ It should also work with Ubuntu for Pi, or Arch Linux, but has not been tested o
 
 > **If running locally on the Pi**: You may encounter an error like "Error while fetching server API version" or "connect: permission denied". If you do, please either reboot or log out and log back in, then run the playbook again. If you continue to receive a "permission denied while trying to connect to the Docker daemon socket" error, then you may need to first add your user to the `docker` user group: `sudo usermod -aG docker $USER`, as outlined in the [Docker documentation](https://docs.docker.com/engine/install/linux-postinstall/).
 
+> **If DNS stops working after the first run on Raspberry Pi OS Trixie (Debian 13)**: The playbook installs `resolvconf`, which can leave `/etc/resolv.conf` empty until NetworkManager regenerates it, so name resolution fails on the Pi (for example, Docker can't pull images). Check with `cat /etc/resolv.conf`: if it has no `nameserver` lines, restart NetworkManager and Docker with `sudo systemctl restart NetworkManager && sudo systemctl restart docker` (or reboot), then run the playbook again if it failed. This only happens on the first run.
+
 ## Usage
 
 ### Pi-hole
