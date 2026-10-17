@@ -15,7 +15,7 @@
       - uplink.display_name is not defined or uplink.display_name is string
     fail_msg: >-
       Uplink '{{ uplink.name | default('unnamed') }}' needs a name made of lowercase letters, digits
-      and hyphens (for example o2-cable; put a readable label such as 'O2 (Cable)' in display_name),
+      and hyphens (for example cable or fiber; put a readable label such as 'Cable' or 'Fiber' in display_name),
       a parent_interface that exists on this host, and subnet, gateway and probe_address.
       contract_download_mbps and contract_upload_mbps must be numbers; expected_isp_pattern and
       display_name text.
