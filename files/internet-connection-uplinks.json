@@ -365,7 +365,7 @@
     },
     {
       "type": "state-timeline",
-      "title": "Uptime and ISP",
+      "title": "Online and failover",
       "datasource": "prometheus",
       "gridPos": {
         "h": 9,
@@ -376,7 +376,7 @@
       "targets": [
         {
           "expr": "(max by (uplink) (probe_success{job=\"ping\", uplink=~\"$uplinks\"})) * on (uplink) group_left (display_name) (uplink_info @ ${__to:date:seconds})",
-          "legendFormat": "{{display_name}}",
+          "legendFormat": "{{display_name}}: online",
           "refId": "A",
           "datasource": "prometheus",
           "instant": false,
@@ -384,7 +384,7 @@
         },
         {
           "expr": "(max by (uplink) (probe_success{job=\"uplink_egress\", uplink=~\"$uplinks\"})) * on (uplink) group_left (display_name) (uplink_info @ ${__to:date:seconds})",
-          "legendFormat": "{{display_name}} ISP",
+          "legendFormat": "{{display_name}}: no failover",
           "refId": "B",
           "datasource": "prometheus",
           "instant": false,
@@ -434,10 +434,10 @@
                     "type": "value",
                     "options": {
                       "0": {
-                        "text": "down"
+                        "text": "offline"
                       },
                       "1": {
-                        "text": "up"
+                        "text": "online"
                       }
                     }
                   }
@@ -458,10 +458,10 @@
                     "type": "value",
                     "options": {
                       "0": {
-                        "text": "other ISP"
+                        "text": "failover or lookup failed"
                       },
                       "1": {
-                        "text": "expected ISP"
+                        "text": "no failover"
                       }
                     }
                   }
@@ -471,6 +471,7 @@
           }
         ]
       },
+      "description": "Each row names the healthy state. Green: it holds. Red: it does not.\n\nOnline: the HTTP checks get an answer through this uplink.\n\nNo failover: every 5 minutes, a lookup confirms that this uplink's traffic leaves through its expected ISP (expected_isp_pattern). Red when the router has failed the uplink over to another WAN, or when the lookup fails.",
       "id": 6
     },
     {
