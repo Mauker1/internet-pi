@@ -111,30 +111,62 @@ monitoring_uplinks:
     subnet: 198.51.100.0/24
     gateway: 198.51.100.1
     probe_address: 198.51.100.250
+    dns_servers:                         # optional
+      - 198.51.100.1
 ```
+
+`dns_servers` is only needed when an uplink's network cannot reach the Pi's own DNS servers; without it, the probes use the same DNS servers as the Pi.
 
 Each uplink gets its own ping (blackbox) and speedtest exporter. The two share a container network namespace attached to a macvlan network on `parent_interface`, with `probe_address` as a static address and the uplink's `gateway` as the default route, so their traffic always leaves through that uplink. While `monitoring_uplinks` is set, the single default-route `speedtest` and `ping` containers are not started; with it empty, nothing changes.
 
-What you get per uplink, all labeled with `uplink` (the readable `display_name` comes from the `uplink_info` series) and shown on the "Internet connection by uplink" dashboard, which replaces the single-uplink "Internet connection" dashboard while `monitoring_uplinks` is set:
+#### What you get
 
-  - **Scheduled speed tests.** A small scheduler runs the uplinks' speed tests one after another (never two at once, so they do not compete for the Pi's CPU), once per `monitoring_speedtest_interval`, `monitoring_uplink_speedtest_offset` after each interval boundary (boundaries are aligned to UTC, so `60m` and `5m` mean every hour at :05). Results are kept in a Prometheus Pushgateway, which Prometheus scrapes.
-  - **HTTP checks** against `monitoring_ping_hosts`, as in the single-uplink setup.
-  - **ICMP round-trip time and packet loss** to `monitoring_uplink_icmp_hosts`, which measure the line itself rather than how fast a web server answers.
-  - **% of contract**, when `contract_download_mbps` / `contract_upload_mbps` are set: the average test result as a percentage of the speed you pay for.
-  - **ISP check**, when `expected_isp_pattern` is set: every 5 minutes the uplink asks `monitoring_uplink_egress_lookup_url` which ISP it is using; the `uplink_unexpected_isp` alert fires when it no longer matches, for example after your router failed the uplink over to another WAN.
-  - **Alerts:** `uplink_down` (no ping target reachable), `uplink_speedtest_failed`, `uplink_speedtest_stale` (no result for two intervals) and `uplink_unexpected_isp`.
+The "Internet connection by uplink" dashboard shows every uplink side by side, under its `display_name`. It replaces the single-uplink "Internet connection" dashboard while `monitoring_uplinks` is set.
 
-Things to know:
+| Feature | What it measures | Configured with |
+|---|---|---|
+| Speed tests | Download, upload, ping and jitter, one uplink after another | `monitoring_speedtest_interval`, `monitoring_uplink_speedtest_offset` |
+| HTTP checks | Whether websites answer, and how fast, as in the single-uplink setup | `monitoring_ping_hosts` |
+| Latency and packet loss | ICMP round-trip time and loss, which measure the line itself | `monitoring_uplink_icmp_hosts` |
+| % of contract (optional) | Average speed as a percentage of the speed you pay for | `contract_download_mbps`, `contract_upload_mbps` |
+| Failover check (optional) | Every 5 minutes, whether the uplink's traffic still leaves through its own ISP | `expected_isp_pattern`, `monitoring_uplink_egress_lookup_url` |
 
-  - Give each uplink its own wired port, built in or a USB Ethernet adapter. This is the tested setup (a board whose second port is a USB 3 gigabit chip, like a Raspberry Pi 4 with a USB 3 gigabit adapter). Wi-Fi interfaces cannot be used, because macvlan does not work on them, and the adapter must accept extra MAC addresses (common gigabit chipsets do). With several USB adapters, names like `eth1` and `eth2` can swap between boots; use their `enx...` names or fixed names from a udev rule. A single port carrying tagged VLANs (for example `parent_interface: eth0.5`) is untested, and the playbook expects `parent_interface` to exist already.
-  - Reserve each `probe_address` on your router, outside the DHCP pool. Docker assigns it statically.
-  - Requires Docker Engine 28.0 or newer and Docker Compose 2.33.1 or newer (for `gw_priority`). The playbook checks this and stops with a message if Docker is older; it does not upgrade an existing Docker installation.
-  - The Pi itself cannot reach the probe addresses (a macvlan limitation). Prometheus reaches the probes over the internal `back-tier` network instead, so monitoring is not affected. The per-uplink ping exporter listens only on that internal network, so other devices on the uplink's LAN cannot use its `/probe` endpoint.
-  - The per-uplink speedtest exporter still listens on its probe address, because the exporter has no option to choose its listening address. Anyone on that uplink's LAN can open `http://<probe_address>:9798/metrics`, which starts an extra speed test (it uses bandwidth but exposes nothing). If that matters on your network, block that port for other devices on the same network, if your switches or access points support such rules.
-  - If your router fails an uplink's network over to another WAN, that uplink's probes keep reporting, but with the other WAN's numbers. Set `expected_isp_pattern` to be alerted, or disable failover for that network on the router.
-  - `dns_servers` (a list) is optional per uplink. Set it when an uplink's network cannot reach the Pi's own DNS servers.
-  - "% of contract" is a quick indicator, not a legal measurement. Where regulators define how to prove a slow connection (for example the Breitbandmessung app in Germany), use their tool for any claim.
-  - Changing ISP on an uplink: display names and contract speeds are read at the end of the dashboard's time range, so the whole history follows the current `config.yml`. If you keep the uplink's `name`, the old ISP's history appears under the new `display_name` and its "% of contract" is measured against the new contract. Giving the uplink a new `name` starts a fresh history instead: the old ISP's data stays in Prometheus until `prometheus_tsdb_retention_time` removes it (Grafana's Explore view can still query it), but the dashboard no longer shows it. Either way, update `expected_isp_pattern`, or the `uplink_unexpected_isp` alert fires.
+Speed tests never run at the same time, so they do not compete for the Pi's CPU. They run once per `monitoring_speedtest_interval`, `monitoring_uplink_speedtest_offset` after each interval boundary; boundaries are aligned to UTC, so `60m` and `5m` mean every hour at :05. Results are kept in a Prometheus Pushgateway, which Prometheus scrapes.
+
+##### Alerts:
+
+  - `uplink_down`: no ping target reachable through the uplink.
+  - `uplink_speedtest_failed`: the last speed test did not complete.
+  - `uplink_speedtest_stale`: no speed test result for two intervals.
+  - `uplink_unexpected_isp`: the uplink's traffic leaves through another ISP, for example after your router failed it over to another WAN (needs `expected_isp_pattern`).
+
+In Prometheus, every series carries an `uplink` label with the uplink's `name`; the readable name comes from the `uplink_info` series.
+
+#### Requirements
+
+  - **One wired port per uplink**: Either built in, PCIe, or a USB Ethernet adapter. The tested setup is a board whose second port is a USB 3 gigabit chip, like a Raspberry Pi 4 with a USB 3 gigabit adapter.
+    - Wi-Fi interfaces cannot be used, because macvlan does not work on them.
+    - The adapter must accept extra MAC addresses (common gigabit chipsets do).
+    - With several USB adapters, names like `eth1` and `eth2` can swap between boots; use their `enx...` names or fixed names from a udev rule.
+    - A single port carrying tagged VLANs (for example `parent_interface: eth0.5`) is untested, and the playbook expects `parent_interface` to exist already.
+  - **A reserved `probe_address` per uplink**: It needs to be outside your router's DHCP pool. Docker assigns it statically.
+  - **Docker Engine 28.0 or newer and Docker Compose 2.33.1 or newer**: For `gw_priority`. The playbook checks this and stops with a message if Docker is older; it does not upgrade an existing Docker installation.
+
+#### Limitations
+
+  - **The Pi itself cannot reach the probe addresses**: This is a macvlan limitation. Prometheus reaches the probes over the internal `back-tier` network instead, so monitoring is not affected. The per-uplink ping exporter listens only on that internal network, so other devices on the uplink's LAN cannot use its `/probe` endpoint.
+  - **The speedtest exporter port is reachable from the uplink's LAN**: The exporter has no option to choose its listening address, so anyone on that LAN can open `http://<probe_address>:9798/metrics`, which starts an extra speed test (it uses bandwidth but exposes nothing). If that matters on your network, block that port for other devices on the same network, if your switches or access points support such rules.
+  - **Failover changes what an uplink measures**: If your router fails an uplink's network over to another WAN, that uplink's probes keep reporting, but with the other WAN's numbers. Set `expected_isp_pattern` to be alerted, or disable failover for that network on the router.
+  - **"% of contract" is a quick indicator, not a legal measurement**: Where regulators define how to prove a slow connection (for example the Breitbandmessung app in Germany), use their tool for any claim.
+
+#### Changing ISP on an uplink
+
+Display names and contract speeds are read at the end of the dashboard's time range, so the whole history follows the current `config.yml`:
+
+  - **Keep the uplink's `name`**: The old ISP's history appears under the new `display_name`, and its "% of contract" is measured against the new contract.
+  - **Give the uplink a new `name`**: It starts a fresh history. The old ISP's data stays in Prometheus until `prometheus_tsdb_retention_time` removes it (Grafana's Explore view can still query it), but the dashboard no longer shows it.
+
+Either way, update `expected_isp_pattern`, or the `uplink_unexpected_isp` alert fires.
 
 ## Updating
 
