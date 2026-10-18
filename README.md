@@ -133,6 +133,7 @@ Things to know:
   - If your router fails an uplink's network over to another WAN, that uplink's probes keep reporting, but with the other WAN's numbers. Set `expected_isp_pattern` to be alerted, or disable failover for that network on the router.
   - `dns_servers` (a list) is optional per uplink. Set it when an uplink's network cannot reach the Pi's own DNS servers.
   - "% of contract" is a quick indicator, not a legal measurement. Where regulators define how to prove a slow connection (for example the Breitbandmessung app in Germany), use their tool for any claim.
+  - Changing ISP on an uplink: display names and contract speeds are read at the end of the dashboard's time range, so the whole history follows the current `config.yml`. If you keep the uplink's `name`, the old ISP's history appears under the new `display_name` and its "% of contract" is measured against the new contract. Giving the uplink a new `name` starts a fresh history instead: the old ISP's data stays in Prometheus until `prometheus_tsdb_retention_time` removes it (Grafana's Explore view can still query it), but the dashboard no longer shows it. Either way, update `expected_isp_pattern`, or the `uplink_unexpected_isp` alert fires.
 
 ## Updating
 
