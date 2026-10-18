@@ -126,6 +126,7 @@ What you get per uplink, all labeled with `uplink` (the readable `display_name` 
 
 Things to know:
 
+  - Give each uplink its own wired port, built in or a USB Ethernet adapter. This is the tested setup (a board whose second port is a USB 3 gigabit chip, like a Raspberry Pi 4 with a USB 3 gigabit adapter). Wi-Fi interfaces cannot be used, because macvlan does not work on them, and the adapter must accept extra MAC addresses (common gigabit chipsets do). With several USB adapters, names like `eth1` and `eth2` can swap between boots; use their `enx...` names or fixed names from a udev rule. A single port carrying tagged VLANs (for example `parent_interface: eth0.5`) is untested, and the playbook expects `parent_interface` to exist already.
   - Reserve each `probe_address` on your router, outside the DHCP pool. Docker assigns it statically.
   - Requires Docker Engine 28.0 or newer and Docker Compose 2.33.1 or newer (for `gw_priority`). The playbook checks this and stops with a message if Docker is older; it does not upgrade an existing Docker installation.
   - The Pi itself cannot reach the probe addresses (a macvlan limitation). Prometheus reaches the probes over the internal `back-tier` network instead, so monitoring is not affected. The per-uplink ping exporter listens only on that internal network, so other devices on the uplink's LAN cannot use its `/probe` endpoint.
