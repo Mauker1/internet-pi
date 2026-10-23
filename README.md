@@ -161,7 +161,7 @@ In Prometheus, every series carries an `uplink` label with the uplink's `name`; 
 
 #### Changing ISP on an uplink
 
-Display names and contract speeds are read at the end of the dashboard's time range, so the whole history follows the current `config.yml`:
+Display names and contract speeds are read at the end of the dashboard's time range, so the whole range follows the `config.yml` in effect at that moment (the current one, for a range that ends now):
 
   - **Keep the uplink's `name`**: The old ISP's history appears under the new `display_name`, and its "% of contract" is measured against the new contract.
   - **Give the uplink a new `name`**: It starts a fresh history. The old ISP's data stays in Prometheus until `prometheus_tsdb_retention_time` removes it (Grafana's Explore view can still query it), but the dashboard no longer shows it.
