@@ -64,9 +64,12 @@ monitoring_uplinks: []
 # boundary (boundaries are aligned to UTC, e.g. every hour at :05).
 monitoring_uplink_speedtest_offset: 5m
 # Hosts pinged with ICMP through every uplink, for round-trip time and packet loss.
+# Use IP addresses: a hostname needs DNS, and DNS filters (for example Pi-hole
+# blocklists for DNS-over-HTTPS) may answer resolver names with 0.0.0.0, which
+# shows up as 100% packet loss.
 monitoring_uplink_icmp_hosts:
-  - one.one.one.one
-  - dns.quad9.net
+  - 1.1.1.1
+  - 9.9.9.9
 # Plain-text service that answers with the caller's ISP (AS organization name),
 # used with `expected_isp_pattern`. Checked every 5 minutes per uplink.
 monitoring_uplink_egress_lookup_url: https://ifconfig.co/asn-org
